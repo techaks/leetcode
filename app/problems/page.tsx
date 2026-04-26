@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function ProblemsPage() {
   const [problems, setProblems] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+const router = useRouter();
 
   useEffect(() => {
     fetch("/api/problems")
@@ -75,10 +77,10 @@ const filtered = problems.filter((p) => {
       {/* List */}
       <div className="flex flex-col gap-2 mt-2">
         {filtered.map((p,index) => (
-          <motion.div
+          <motion.div  onClick={() => router.push(`/problems/${p.id}`)}
             key={p.id}
             whileHover={{ scale: 1.01 }}
-            className="grid grid-cols-12 items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5 hover:border-yellow-400/30 transition"
+            className=" cursor-pointer grid grid-cols-12 items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5 hover:border-yellow-400/30 transition"
           >
             {/* Number + Tick */}
             <div className="col-span-1 flex items-center gap-2">
