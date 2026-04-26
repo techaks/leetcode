@@ -24,3 +24,7 @@ body {
   background: #facc15;
   color: black;
 }
+
+body {
+  background: radial-gradient(circle at top, #0f0f0f, #050505);
+}
