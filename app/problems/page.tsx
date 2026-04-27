@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 export default function ProblemsPage() {
   const [problems, setProblems] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-const router = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/problems")
@@ -16,19 +16,23 @@ const router = useRouter();
       .then((data) => setProblems(data));
   }, []);
 
-const filtered = problems.filter((p) => {
-  const query = search.trim().toLowerCase();
+  console.log(problems);
 
-  if (query === "") return true;
+  // 🔥 FIXED FILTER
+  const filtered = problems.filter((p, index) => {
+    const query = search.trim().toLowerCase();
 
-  // number search
-  if (!isNaN(Number(query))) {
-    return String(p.id) === query;   // 🔥 FIX
-  }
+    if (query === "") return true;
 
-  return p.title.toLowerCase().includes(query);
-});
+    // number search (index based)
+    if (!isNaN(Number(query))) {
+      return index + 1 === Number(query);
+    }
 
+    return p.title?.toLowerCase().includes(query);
+  });
+
+  // 🔥 solved (future ready)
   const solvedCount = problems.filter((p) => p.solved).length;
 
   return (
@@ -37,7 +41,7 @@ const filtered = problems.filter((p) => {
       {/* Top Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         
-        {/* Topics */}
+        {/* Topics (static for now) */}
         <div className="flex gap-3 overflow-x-auto pb-2">
           {["All Topics", "Array", "String", "DP", "Graph"].map((t, i) => (
             <button
@@ -76,20 +80,21 @@ const filtered = problems.filter((p) => {
 
       {/* List */}
       <div className="flex flex-col gap-2 mt-2">
-        {filtered.map((p,index) => (
-          <motion.div  onClick={() => router.push(`/problems/${p.id}`)}
-            key={p.id}
+        {filtered.map((p, index) => (
+          <motion.div
+           key={p._id ? p._id.toString() : index}
             whileHover={{ scale: 1.01 }}
-            className=" cursor-pointer grid grid-cols-12 items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5 hover:border-yellow-400/30 transition"
+            onClick={() => router.push(`/problems/${p._id}`)} // 🔥 FIX
+            className="cursor-pointer grid grid-cols-12 items-center px-4 py-3 rounded-xl bg-white/5 border border-white/5 hover:border-yellow-400/30 transition"
           >
             {/* Number + Tick */}
             <div className="col-span-1 flex items-center gap-2">
-             {p.solved ? (
-  <span className="text-green-400 text-sm">✔</span>
-) : (
-  <span className="w-2 h-2 rounded-full bg-gray-600 inline-block"></span>
-)}
-             <span>{p.id}</span>
+              {p.solved ? (
+                <span className="text-green-400 text-sm">✔</span>
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-gray-600 inline-block"></span>
+              )}
+              <span>{index + 1}</span> {/* 🔥 FIX */}
             </div>
 
             {/* Title */}
