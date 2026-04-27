@@ -10,6 +10,7 @@ import {
   FlaskConical,
   ShieldCheck,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function AddProblemForm() {
   const [title, setTitle] = useState("");
@@ -102,9 +103,9 @@ const submit = async () => {
       }),
     });
 
-    alert("✅ Problem Added");
+    toast.success("✅ Problem Added");
   } catch {
-    alert("❌ Error");
+    toast.error("❌ Error");
   }
 };
 

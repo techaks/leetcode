@@ -70,9 +70,12 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-4">
-            <button className="relative px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black font-semibold shadow-lg hover:scale-105 transition">
-              Login
-            </button>
+           <Link
+  href="/login"
+  className="relative px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black font-semibold shadow-lg hover:scale-105 transition"
+>
+  Login
+</Link>
           </div>
 
           {/* Mobile Button */}
@@ -101,10 +104,12 @@ export default function Navbar() {
                 {item.name}
               </Link>
             ))}
-
-            <button className="mt-2 px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black">
-              Login
-            </button>
+            <Link
+  href="/login"
+  className="mt-2 inline-block px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black font-medium hover:opacity-90 transition"
+>
+  Login
+</Link>
           </motion.div>
         )}
       </div>

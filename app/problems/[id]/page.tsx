@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Editor from "@monaco-editor/react";
+import toast from "react-hot-toast";
 
 export default function ProblemDetail() {
   const { id } = useParams();
@@ -54,107 +55,178 @@ export default function ProblemDetail() {
     }
   };
 
-  const generateWrapper = (userCode: string, input: any) => {
-  return `
-#include <bits/stdc++.h>
-using namespace std;
+const generateWrapper = (userCode: string, input: any) => {
+  if (!problem?.wrappers) return userCode;
 
-${userCode}
+  let wrapper = "";
 
-int main() {
-    vector<int> nums = {${input.nums.join(",")}};
-    int target = ${input.target};
+  if (lang === "cpp") {
+    wrapper = problem.wrappers.cpp;
+  } else if (lang === "python") {
+    wrapper = problem.wrappers.python;
+  } else {
+    return userCode;
+  }
 
-    vector<int> ans = twoSum(nums, target);
+  if (!wrapper) return userCode;
 
-    for(int x : ans) cout << x << " ";
-    return 0;
-}
-`;
+  wrapper = wrapper.replace("// USER_CODE_HERE", userCode);
+
+  Object.keys(input).forEach((key) => {
+    const value = input[key];
+
+    if (Array.isArray(value)) {
+      wrapper = wrapper.replace(
+        new RegExp(`int ${key} = .*;`, "g"),
+        `vector<int> ${key} = {${value.join(",")}};`
+      );
+    } else {
+      wrapper = wrapper.replace(
+        new RegExp(`int ${key} = .*;`, "g"),
+        `int ${key} = ${value};`
+      );
+    }
+  });
+
+  return wrapper;
 };
 
-useEffect(() => {
-  if (problem?.template) {
-    setCode(problem.template);
+ useEffect(() => {
+  if (!problem) return;
+
+  let newCode = "";
+
+  if (lang === "cpp") {
+    newCode = problem.templates?.cpp || "";
+  } else if (lang === "python") {
+    newCode = problem.templates?.python || "";
+  } else if (lang === "javascript") {
+    newCode = problem.templates?.javascript || "// JS code here";
+  } else if (lang === "c") {
+    newCode = problem.templates?.c || "// C code here";
   }
-}, [problem]);
+
+  setCode(newCode);
+
+}, [lang, problem]);
+
 
 
   // 🔥 RUN CODE
-const runCode = async () => {
-  setLoading(true);
-  setResult("Running...");
+  const runCode = async () => {
+    if (!problem) return;
 
-  const finalCode = generateWrapper(code, problem.publicTestCase.input);
+    setLoading(true);
+    toast.loading("Running...", { id: "run" });
 
-  try {
-    const res = await fetch("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: finalCode,
-        language: "cpp17",
-        versionIndex: "0",
-      }),
-    });
+    try {
+      const finalCode = generateWrapper(
+        code,
+        problem.publicTestCases[0].input
+      );
 
-    const data = await res.json();
+      const res = await fetch("/api/run", {
+        method: "POST",
+        body: JSON.stringify({ code: finalCode }),
+      });
 
-    const output = data.output?.trim();
+      const data = await res.json();
 
-    setResult(`🧪 Output:\n${output}`);
-  } catch {
-    setResult("Server error");
-  }
+      console.log("FINAL DATA:", data);
 
-  setLoading(false);
-};
+      const output = (data.output || "").trim();
 
-// submit code 
-const submitCode = async () => {
-  setLoading(true);
-  setResult("Running all test cases...\n");
+      // 🔥 REAL FIX (IMPORTANT)
+      if (!data.isExecutionSuccess) {
+        toast.error("❌ Execution Failed", { id: "run" });
+        setResult(output || "Execution failed");
+      } else if (!output) {
+        toast("⚠️ No Output", { id: "run" });
+        setResult("No Output");
+      } else {
+        toast.success("✅ Run Successful", { id: "run" });
+        setResult(output);
+      }
 
-  let allPassed = true;
-  let finalResult = "";
-
-  for (let i = 0; i < problem.privateTestCases.length; i++) {
-    const tc = problem.privateTestCases[i];
-
-    const finalCode = generateWrapper(code, tc.input);
-
-    const res = await fetch("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: finalCode,
-        language: "cpp17",
-        versionIndex: "0",
-      }),
-    });
-
-    const data = await res.json();
-    const output = data.output?.trim();
-
-    if (output === tc.output) {
-      finalResult += `Test ${i + 1}: ✔ Passed\n`;
-    } else {
-      finalResult += `Test ${i + 1}: ❌ Failed\nExpected: ${tc.output}\nGot: ${output}\n\n`;
-      allPassed = false;
+    } catch {
+      toast.error("⚠️ Run Failed", { id: "run" });
+      setResult("Server Error");
     }
-  }
 
-  if (allPassed) {
-    finalResult = "🎉 Accepted\n\n" + finalResult;
-  } else {
-    finalResult = "❌ Wrong Answer\n\n" + finalResult;
-  }
+    setLoading(false);
+  };
+  // submit code 
+  const submitCode = async () => {
+    if (!problem) return;
 
-  setResult(finalResult);
+    setLoading(true);
+    toast.loading("Submitting...", { id: "submit" });
+
+    try {
+      for (let i = 0; i < problem.privateTestCases.length; i++) {
+        const tc = problem.privateTestCases[i];
+
+        const finalCode = generateWrapper(code, tc.input);
+
+        const res = await fetch("/api/run", {
+          method: "POST",
+          body: JSON.stringify({ code: finalCode }),
+        });
+
+        const data = await res.json();
+
+        // 🔥 ERROR HANDLE
+     if (!data.isExecutionSuccess) {
+  toast.error(`❌ Error at Test ${i + 1}`, { id: "submit" });
+
+  setResult(`
+❌ Error
+
+Test ${i + 1}
+${data.output}
+  `);
+
   setLoading(false);
-};
+  return;
+}
 
-///
+        const output = (data.output || "").trim();
+
+        if (output !== tc.output.trim()) {
+          toast.error(`❌ Failed at Test ${i + 1}`, { id: "submit" });
+
+          setResult(`
+❌ Failed
+
+Test ${i + 1}: ✖ Failed
+Expected: ${tc.output}
+Got: ${output}
+        `);
+
+          setLoading(false);
+          return;
+        }
+      }
+
+      // ✅ SUCCESS
+      toast.success("🎉 Accepted!", { id: "submit" });
+
+      setResult(`
+🎉 Accepted
+
+${problem.privateTestCases
+          .map((_: any, i: number) => `Test ${i + 1}: ✔ Passed`)
+          .join("\n")}
+    `);
+
+    } catch {
+      toast.error("⚠️ Submit Failed", { id: "submit" });
+    }
+
+    setLoading(false);
+  };
+
+  ///
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
@@ -172,25 +244,52 @@ const submitCode = async () => {
     <div className="flex h-[90vh]">
       {/* 🔥 LEFT SIDE */}
       <div className="w-1/2 p-6 overflow-y-auto border-r border-white/10 bg-[#0d0d0d]">
-        <h1 className="text-xl font-semibold mb-4 text-yellow-400">
-          {problem?.id}. {problem?.title}
+
+        {/* Title */}
+        <h1 className="text-xl font-semibold mb-2 text-yellow-400">
+          {problem?.title}
         </h1>
 
+        {/* Difficulty */}
         <span
-          className={`px-2 py-1 text-xs rounded font-medium ${
-            problem.difficulty === "Easy"
+          className={`px-2 py-1 text-xs rounded font-medium ${problem.difficulty === "Easy"
               ? "text-green-400"
               : problem.difficulty === "Medium"
-              ? "text-yellow-400"
-              : "text-red-400"
-          }`}
+                ? "text-yellow-400"
+                : "text-red-400"
+            }`}
         >
           {problem.difficulty}
         </span>
 
+        {/* Description */}
         <p className="mt-4 text-gray-300 whitespace-pre-line">
           {problem?.description}
         </p>
+
+        {/* 🔥 Examples */}
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-gray-400 mb-2">Examples</h2>
+
+          {problem.examples?.map((ex: any, i: number) => (
+            <div key={i} className="mb-4 bg-white/5 p-3 rounded-lg border border-white/10">
+              <div className="text-xs text-gray-400 mb-1">Input</div>
+              <pre className="text-sm text-gray-200">{ex.input}</pre>
+
+              <div className="text-xs text-gray-400 mt-2 mb-1">Output</div>
+              <pre className="text-sm text-gray-200">{ex.output}</pre>
+            </div>
+          ))}
+        </div>
+
+        {/* 🔥 Constraints */}
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-gray-400 mb-2">Constraints</h2>
+          <p className="text-gray-300 whitespace-pre-line">
+            {problem.constraints}
+          </p>
+        </div>
+
       </div>
 
       {/* 🔥 RIGHT SIDE */}

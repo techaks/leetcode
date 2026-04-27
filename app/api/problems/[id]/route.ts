@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { problems } from "@/lib/data";
+import { connectDB } from "@/lib/db";
+import Problem from "@/models/Problem";
+
+export const revalidate = 60; // 🔥 cache
 
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // ✅ IMPORTANT
+  await connectDB();
 
-  const problem = problems.find(
-    (p) => String(p.id) === String(id)
-  );
+  const { id } = await context.params;
+
+  const problem = await Problem.findById(id);
 
   if (!problem) {
     return NextResponse.json(
