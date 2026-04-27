@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -24,12 +25,16 @@ export default function Home() {
         Solve problems, track progress, and crack coding interviews 🚀
       </motion.p>
 
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        className="mt-6 px-6 py-3 bg-yellow-500 text-black rounded-xl font-medium hover:bg-yellow-400 transition"
-      >
-        Start Solving
-      </motion.button>
+ 
+<Link href="/problems">
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}   // 🔥 click animation
+    className=" cursor-pointer mt-6 px-6 py-3 bg-yellow-500 text-black rounded-xl font-medium hover:bg-yellow-400 transition shadow-md hover:shadow-yellow-400/30"
+  >
+    Start Solving
+  </motion.button>
+</Link>
 
     </div>
   );

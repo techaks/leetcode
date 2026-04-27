@@ -4,6 +4,18 @@ export const problems = [
     title: "Two Sum",
     difficulty: "Easy",
     solved: true,
+     template: `vector<int> twoSum(vector<int>& nums, int target) {
+}`,
+
+  publicTestCase: {
+    input: { nums: [2,7,11,15], target: 9 },
+    output: "0 1"
+  },
+
+  privateTestCases: [
+    { input: { nums: [3,2,4], target: 6 }, output: "1 2" },
+    { input: { nums: [1,5], target: 6 }, output: "0 1" }
+  ],
     description: `Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
 
 Example:
