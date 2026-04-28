@@ -12,7 +12,7 @@ export default function Home() {
       <div className="absolute -bottom-25 -right-25 w-75 h-75 bg-orange-500/20 rounded-full blur-[120px]" />
 
       {/* 🔥 Grid Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[40px_40px]" />
 
       {/* 🔥 Main Content */}
       <div className="relative z-10">
