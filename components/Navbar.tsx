@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Code2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
   { name: "Problems", href: "/problems" },
@@ -16,6 +17,12 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  const { data: session } = useSession();
+
+  const initials = session?.user?.name
+    ? session.user.name.charAt(0).toUpperCase()
+    : "?";
 
   return (
     <nav className="w-full sticky top-0 z-50">
@@ -41,8 +48,6 @@ export default function Navbar() {
 
               return (
                 <Link key={item.name} href={item.href} className="relative group">
-                  
-                  {/* Text */}
                   <span
                     className={`text-sm font-medium transition-all duration-300 ${
                       active
@@ -53,10 +58,8 @@ export default function Navbar() {
                     {item.name}
                   </span>
 
-                  {/* Glow Effect */}
                   <span className="absolute inset-0 opacity-0 group-hover:opacity-100 blur-md bg-yellow-400/30 transition-all duration-300 rounded-md" />
 
-                  {/* Active underline */}
                   {active && (
                     <motion.div
                       layoutId="underline"
@@ -68,14 +71,53 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right side */}
-          <div className="hidden md:flex items-center gap-4">
-           <Link
-  href="/login"
-  className="relative px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black font-semibold shadow-lg hover:scale-105 transition"
->
-  Login
-</Link>
+          {/* 🔥 Right side */}
+          <div className="hidden md:flex items-center gap-4 relative">
+
+            {session ? (
+              <div className="relative group">
+                
+                {/* Avatar */}
+                <div className="w-9 h-9 flex items-center justify-center rounded-full bg-yellow-400 text-black font-bold cursor-pointer hover:scale-105 transition">
+                  {initials}
+                </div>
+
+                {/* Dropdown (hover based) */}
+                <div className="absolute right-0 top-12 w-48 bg-black/90 border border-white/10 rounded-xl shadow-lg backdrop-blur-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+
+                  <div className="px-4 py-3 border-b border-white/10">
+                    <p className="text-sm text-white font-semibold">
+                      {session.user?.name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {session.user?.email}
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 text-sm hover:bg-white/10 transition"
+                  >
+                    Profile
+                  </Link>
+
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10 transition"
+                  >
+                    Logout
+                  </button>
+
+                </div>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black font-semibold shadow-lg hover:scale-105 transition"
+              >
+                Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile Button */}
@@ -104,12 +146,29 @@ export default function Navbar() {
                 {item.name}
               </Link>
             ))}
-            <Link
-  href="/login"
-  className="mt-2 inline-block px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black font-medium hover:opacity-90 transition"
->
-  Login
-</Link>
+
+            {session ? (
+              <>
+                <div className="text-sm text-gray-300">
+                  {session.user?.name}
+                </div>
+
+                <button
+                  onClick={() => signOut()}
+                  className="px-5 py-2 rounded-xl bg-red-500 text-white"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="px-5 py-2 rounded-xl bg-linear-to-r from-yellow-400 to-orange-500 text-black"
+              >
+                Login
+              </Link>
+            )}
           </motion.div>
         )}
       </div>

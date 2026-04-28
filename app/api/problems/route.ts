@@ -28,6 +28,7 @@ export async function GET() {
   // 🔥 get all problems
   const problems = await Problem.find().sort({ createdAt: 1 });
 
+  console.log("API HIT");
   // 🔥 map with solved flag
   const formatted = problems.map((p, i) => ({
     _id: p._id,

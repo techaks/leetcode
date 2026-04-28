@@ -11,10 +11,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#0b0b0b] text-white">
-        <Navbar />
-        <Providers>{children}</Providers>
-        
-         <Toaster position="top-right" />
+        <Providers>
+          <Navbar />    
+          {children}
+        </Providers>
+
+        <Toaster position="top-right" />
       </body>
     </html>
   );

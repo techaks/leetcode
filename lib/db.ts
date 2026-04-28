@@ -23,6 +23,7 @@ export async function connectDB() {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGO_URI);
+    console.log("DB:", mongoose.connection.name);
   }
 
   cached.conn = await cached.promise;
