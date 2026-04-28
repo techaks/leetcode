@@ -133,9 +133,13 @@ export default function ProblemsPage() {
 
       {/* Empty State */}
       {filtered.length === 0 && (
-        <div className="text-center text-gray-500 mt-10">
-          No problems found 😕
-        </div>
+       <div className="h-screen flex items-center justify-center bg-[#0b0b0b]">
+  <p className="text-yellow-400 font-mono text-lg animate-pulse">
+    {"<Loading... />"}
+  </p>
+</div>
+
+       
       )}
     </div>
   );
