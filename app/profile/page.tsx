@@ -4,6 +4,7 @@ export const fetchCache = "force-no-store";
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import StreakHeatmap from "@/components/StreakHeatmap";
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -135,6 +136,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        <StreakHeatmap solvedDates={profile.solvedDates} />
 
         {/* 🔥 BUTTONS */}
         <div className="flex gap-4">

@@ -2,25 +2,48 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
 
   const signup = async () => {
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password }),
-    });
+    if (loading) return;
 
-    if (res.ok) {
-      alert("Signup successful 🎉");
-      router.push("/login");
-    } else {
-      alert("Signup failed ❌");
+    if (!name || !email || !password) {
+      toast.error("All fields are required ❌");
+      return;
     }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // 🔥 important
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Signup failed ❌");
+      } else {
+        toast.success("Account created 🎉");
+        router.push("/login");
+      }
+    } catch (err) {
+      toast.error("Something went wrong ⚠️");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -58,9 +81,17 @@ export default function SignupPage() {
         {/* Button */}
         <button
           onClick={signup}
-          className="w-full bg-green-500 hover:bg-green-400 transition py-2 rounded-lg font-medium text-white"
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 transition py-2 rounded-lg font-medium text-white disabled:opacity-70"
         >
-          Signup
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Creating...
+            </>
+          ) : (
+            "Signup"
+          )}
         </button>
 
         {/* Divider */}

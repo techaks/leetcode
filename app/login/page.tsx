@@ -3,20 +3,40 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
 
-  const login = async () => {
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: true,
-      callbackUrl: "/problems",
-    });
-  };
+const login = async () => {
+  if (loading) return;
+
+  setLoading(true);
+
+  const res = await signIn("credentials", {
+    email,
+    password,
+    redirect: false, // 🔥 IMPORTANT
+  });
+
+  setLoading(false);
+
+  if (res?.error) {
+    // ❌ error case
+    toast.error(res.error === "CredentialsSignin" 
+      ? "Invalid email or password ❌"
+      : res.error
+    );
+  } else {
+    // ✅ success
+    toast.success("Login successful 🚀");
+    router.push("/problems");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0b0b0b] px-4">
@@ -46,9 +66,18 @@ export default function LoginPage() {
         {/* Button */}
         <button
           onClick={login}
-          className="w-full bg-yellow-400 hover:bg-yellow-300 transition py-2 rounded-lg font-medium text-black"
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 transition py-2 rounded-lg font-medium text-black disabled:opacity-70"
         >
-          Login
+          {loading ? (
+            <>
+              {/* Spinner */}
+              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+              Logging in...
+            </>
+          ) : (
+            "Login"
+          )}
         </button>
 
         {/* Divider */}

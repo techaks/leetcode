@@ -28,3 +28,11 @@ body {
 body {
   background: radial-gradient(circle at top, #0f0f0f, #050505);
 }
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes shine {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
