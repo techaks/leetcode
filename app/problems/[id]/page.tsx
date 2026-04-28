@@ -55,41 +55,7 @@ export default function ProblemDetail() {
     }
   };
 
-const generateWrapper = (userCode: string, input: any) => {
-  if (!problem?.wrappers) return userCode;
-
-  let wrapper = "";
-
-  if (lang === "cpp") {
-    wrapper = problem.wrappers.cpp;
-  } else if (lang === "python") {
-    wrapper = problem.wrappers.python;
-  } else {
-    return userCode;
-  }
-
-  if (!wrapper) return userCode;
-
-  wrapper = wrapper.replace("// USER_CODE_HERE", userCode);
-
-  Object.keys(input).forEach((key) => {
-    const value = input[key];
-
-    if (Array.isArray(value)) {
-      wrapper = wrapper.replace(
-        new RegExp(`int ${key} = .*;`, "g"),
-        `vector<int> ${key} = {${value.join(",")}};`
-      );
-    } else {
-      wrapper = wrapper.replace(
-        new RegExp(`int ${key} = .*;`, "g"),
-        `int ${key} = ${value};`
-      );
-    }
-  });
-
-  return wrapper;
-};
+ 
 
  useEffect(() => {
   if (!problem) return;
@@ -113,119 +79,135 @@ const generateWrapper = (userCode: string, input: any) => {
 
 
   // 🔥 RUN CODE
-  const runCode = async () => {
-    if (!problem) return;
+const runCode = async () => {
+  if (!problem) return;
 
-    setLoading(true);
-    toast.loading("Running...", { id: "run" });
+  setLoading(true);
+  toast.loading("Running...", { id: "run" });
 
-    try {
-      const finalCode = generateWrapper(
+  try {
+    const res = await fetch("/api/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         code,
-        problem.publicTestCases[0].input
-      );
+        wrapper:
+          lang === "cpp"
+            ? problem.wrappers.cpp
+            : problem.wrappers.python,
+        input: problem.publicTestCases[0].input,
+        language: lang,
+      }),
+    });
+
+    const data = await res.json();
+
+    const output = (data.output || "").trim();
+
+    if (!data.isExecutionSuccess) {
+      toast.error("❌ Execution Failed", { id: "run" });
+      setResult(output || "Execution failed");
+    } else {
+      toast.success("✅ Run Successful", { id: "run" });
+      setResult(output);
+    }
+
+  } catch {
+    toast.error("⚠️ Run Failed", { id: "run" });
+    setResult("Server Error");
+  }
+
+  setLoading(false);
+};
+
+
+  // submit code 
+const submitCode = async () => {
+  if (!problem) return;
+
+  setLoading(true);
+  toast.loading("Submitting...", { id: "submit" });
+
+  try {
+    const allTests = [
+      ...problem.publicTestCases,
+      ...problem.privateTestCases,
+    ];
+
+    for (let i = 0; i < allTests.length; i++) {
+      const tc = allTests[i];
 
       const res = await fetch("/api/run", {
         method: "POST",
-        body: JSON.stringify({ code: finalCode }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code,
+          wrapper:
+            lang === "cpp"
+              ? problem.wrappers.cpp
+              : problem.wrappers.python,
+          input: tc.input,
+          language: lang,
+        }),
       });
 
       const data = await res.json();
 
-      console.log("FINAL DATA:", data);
+      if (!data.isExecutionSuccess) {
+        toast.error(`❌ Error at Test ${i + 1}`, { id: "submit" });
+
+        setResult(`❌ Error\n\nTest ${i + 1}\n${data.output}`);
+        setLoading(false);
+        return;
+      }
 
       const output = (data.output || "").trim();
+      const expected = (tc.output || "").trim();
 
-      // 🔥 REAL FIX (IMPORTANT)
-      if (!data.isExecutionSuccess) {
-        toast.error("❌ Execution Failed", { id: "run" });
-        setResult(output || "Execution failed");
-      } else if (!output) {
-        toast("⚠️ No Output", { id: "run" });
-        setResult("No Output");
-      } else {
-        toast.success("✅ Run Successful", { id: "run" });
-        setResult(output);
-      }
+      if (output !== expected) {
+        toast.error(`❌ Failed at Test ${i + 1}`, { id: "submit" });
 
-    } catch {
-      toast.error("⚠️ Run Failed", { id: "run" });
-      setResult("Server Error");
-    }
-
-    setLoading(false);
-  };
-  // submit code 
-  const submitCode = async () => {
-    if (!problem) return;
-
-    setLoading(true);
-    toast.loading("Submitting...", { id: "submit" });
-
-    try {
-      for (let i = 0; i < problem.privateTestCases.length; i++) {
-        const tc = problem.privateTestCases[i];
-
-        const finalCode = generateWrapper(code, tc.input);
-
-        const res = await fetch("/api/run", {
-          method: "POST",
-          body: JSON.stringify({ code: finalCode }),
-        });
-
-        const data = await res.json();
-
-        // 🔥 ERROR HANDLE
-     if (!data.isExecutionSuccess) {
-  toast.error(`❌ Error at Test ${i + 1}`, { id: "submit" });
-
-  setResult(`
-❌ Error
-
-Test ${i + 1}
-${data.output}
-  `);
-
-  setLoading(false);
-  return;
-}
-
-        const output = (data.output || "").trim();
-
-        if (output !== tc.output.trim()) {
-          toast.error(`❌ Failed at Test ${i + 1}`, { id: "submit" });
-
-          setResult(`
-❌ Failed
+        setResult(`❌ Failed
 
 Test ${i + 1}: ✖ Failed
-Expected: ${tc.output}
-Got: ${output}
-        `);
+Expected: ${expected}
+Got: ${output}`);
 
-          setLoading(false);
-          return;
-        }
+        setLoading(false);
+        return;
       }
-
-      // ✅ SUCCESS
-      toast.success("🎉 Accepted!", { id: "submit" });
-
-      setResult(`
-🎉 Accepted
-
-${problem.privateTestCases
-          .map((_: any, i: number) => `Test ${i + 1}: ✔ Passed`)
-          .join("\n")}
-    `);
-
-    } catch {
-      toast.error("⚠️ Submit Failed", { id: "submit" });
     }
 
-    setLoading(false);
-  };
+    // ✅ SUCCESS
+    toast.success("🎉 Accepted!", { id: "submit" });
 
+    setResult(`🎉 Accepted
+
+${allTests
+      .map((_: any, i: number) => `Test ${i + 1}: ✔ Passed`)
+      .join("\n")}`);
+
+    // 🔥 SAVE SOLVED
+    await fetch("/api/user/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        problemId: problem._id,
+      }),
+    });
+
+  } catch {
+    toast.error("⚠️ Submit Failed", { id: "submit" });
+  }
+
+  setLoading(false);
+};
   ///
 
   useEffect(() => {

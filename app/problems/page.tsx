@@ -10,11 +10,22 @@ export default function ProblemsPage() {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/problems")
-      .then((res) => res.json())
-      .then((data) => setProblems(data));
-  }, []);
+ useEffect(() => {
+  fetch("/api/problems", {
+    credentials: "include",
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error("API Error");
+      }
+      return res.json();
+    })
+    .then((data) => setProblems(data))
+    .catch((err) => {
+      console.error("❌ Fetch failed:", err);
+      setProblems([]); // fallback
+    });
+}, []);
 
   console.log(problems);
 
