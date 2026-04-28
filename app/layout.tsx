@@ -3,6 +3,14 @@ import Navbar from "@/components/Navbar";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 
+export const metadata = {
+  title: "CodeJudge",
+  description: "Practice coding like LeetCode",
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
